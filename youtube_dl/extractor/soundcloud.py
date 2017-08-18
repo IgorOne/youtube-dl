@@ -20,6 +20,8 @@ from ..utils import (
 )
 
 
+ARTIST = ''
+
 class SoundcloudIE(InfoExtractor):
     """Information extractor for soundcloud.com
        To access the media, the uid of the song and a stream token
@@ -336,6 +338,7 @@ class SoundcloudPagedPlaylistBaseIE(SoundcloudPlaylistBaseIE):
     _API_V2_BASE = 'https://api-v2.soundcloud.com'
 
     def _extract_playlist(self, base_url, playlist_id, playlist_title):
+        global ARTIST
         COMMON_QUERY = {
             'limit': 50,
             'client_id': self._CLIENT_ID,
@@ -379,11 +382,13 @@ class SoundcloudPagedPlaylistBaseIE(SoundcloudPlaylistBaseIE):
             next_href = compat_urlparse.urlunparse(
                 parsed_next_href._replace(query=compat_urllib_parse_urlencode(qs, True)))
 
+        playlist_artist = ARTIST ## the global value
         return {
             '_type': 'playlist',
             'id': playlist_id,
             'title': playlist_title,
             'entries': entries,
+            'playlist_uploader' : playlist_artist,
         }
 
 
@@ -461,6 +466,7 @@ class SoundcloudUserIE(SoundcloudPagedPlaylistBaseIE):
     }
 
     def _real_extract(self, url):
+        global ARTIST
         mobj = re.match(self._VALID_URL, url)
         uploader = mobj.group('user')
 
@@ -470,6 +476,8 @@ class SoundcloudUserIE(SoundcloudPagedPlaylistBaseIE):
             resolv_url, uploader, 'Downloading user info')
 
         resource = mobj.group('rsrc') or 'all'
+
+        ARTIST = user['username']
 
         return self._extract_playlist(
             self._BASE_URL_MAP[resource] % user['id'], compat_str(user['id']),
